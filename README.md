@@ -44,6 +44,16 @@ Open the app, grant the SMS + notification permissions, tap **Disable battery op
 
 **Filters (optional):** restrict by sender, required keyword, or body regex. Blank = forward everything.
 
+## Reliability (background & reboot)
+
+The forwarder needs no always-running service:
+
+- The manifest-declared `SMS_RECEIVED` receiver wakes the app on each incoming SMS **even if it isn't running**. A reboot does not return a launched app to the "stopped" state, so forwarding resumes automatically after a restart — no need to reopen the app.
+- WorkManager persists its job queue across reboots (its `RescheduleReceiver` re-arms on `BOOT_COMPLETED`) and retries with exponential backoff. Email retries carry an idempotency key, so a retry never sends a duplicate.
+- Grant the **battery-optimization exemption** (the app offers a button) so delivery stays prompt; on a plugged-in phone Doze barely engages anyway.
+
+**Direct-boot caveat:** the receiver is not direct-boot-aware (so the encrypted config never lands in unprotected storage). If the phone reboots and sits at a locked PIN screen, SMS are processed only after the first unlock — the carrier retries delivery, so nothing is lost, just delayed. For an unattended, dedicated box, set **Settings → Security → Screen lock → None** so it boots straight to a usable state and forwards immediately.
+
 ## Repo layout
 
 ```
@@ -60,7 +70,9 @@ CustomAndroidSmsForwarder/
         ├── ResendSender.kt   ← email via Resend HTTPS API (idempotent)
         ├── SmsSender.kt      ← SMS→SMS via SmsManager
         ├── Prefs.kt          ← config in EncryptedSharedPreferences
-        └── MainActivity.kt   ← one Compose settings screen
+        ├── Stats.kt          ← forwarded/filtered/failed counters
+        ├── Theme.kt          ← Material 3 / dynamic color
+        └── MainActivity.kt   ← Home + Settings (Compose)
 ```
 
 ## Credits / prior art

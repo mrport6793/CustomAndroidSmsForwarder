@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -178,9 +179,14 @@ private fun HomeScreen(
 ) {
     // `revision` is read so a save invalidates this composition and re-reads prefs.
     @Suppress("UNUSED_EXPRESSION") revision
+    val context = LocalContext.current
     val mode = prefs.mode
     val smsOk = isSmsPermissionGranted()
     val ready = forwardingReady(prefs, smsOk)
+
+    // Bumped by Refresh/Reset so the counters re-read from disk.
+    var statsRefresh by remember { mutableStateOf(0) }
+    val stats = remember(statsRefresh) { Stats(context) }
 
     Scaffold(
         topBar = {
@@ -217,6 +223,29 @@ private fun HomeScreen(
 
             SectionCard(title = "Filters") {
                 Text(filterSummary(prefs), style = MaterialTheme.typography.bodyMedium)
+            }
+
+            SectionCard(title = "Activity") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    StatTile(Modifier.weight(1f), stats.forwarded, "Forwarded")
+                    StatTile(Modifier.weight(1f), stats.filtered, "Filtered")
+                    StatTile(Modifier.weight(1f), stats.failed, "Failed")
+                }
+                Text(
+                    "Last forwarded: ${relativeTime(stats.lastForwardedAt)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = { statsRefresh++ }) { Text("Refresh") }
+                    TextButton(onClick = { stats.reset(); statsRefresh++ }) { Text("Reset") }
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -275,6 +304,28 @@ private fun HeroCard(ready: Boolean, mode: Prefs.Mode) {
                     color = onContainer,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun StatTile(modifier: Modifier, count: Long, label: String) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                count.toString(),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(label, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -518,6 +569,15 @@ private fun StatusPill(ok: Boolean, label: String, onClick: (() -> Unit)? = null
             Text(label, color = fg, style = MaterialTheme.typography.labelMedium)
         }
     }
+}
+
+private fun relativeTime(epochMillis: Long): String {
+    if (epochMillis <= 0L) return "never"
+    return DateUtils.getRelativeTimeSpanString(
+        epochMillis,
+        System.currentTimeMillis(),
+        DateUtils.MINUTE_IN_MILLIS,
+    ).toString()
 }
 
 private fun modeLabel(mode: Prefs.Mode): String = when (mode) {

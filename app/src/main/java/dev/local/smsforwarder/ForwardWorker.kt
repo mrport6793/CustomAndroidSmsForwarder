@@ -21,10 +21,12 @@ class ForwardWorker(
         val receivedAt = inputData.getLong(SmsReceiver.KEY_TS, 0L)
 
         val prefs = Prefs(applicationContext)
+        val stats = Stats(applicationContext)
 
         // Filter: if a rule is set and the message doesn't match, silently drop.
         if (!prefs.passesFilter(sender, body)) {
             Log.i(TAG, "Filtered out (no match) from=$sender; dropping")
+            stats.recordFiltered()
             return Result.success()
         }
 
@@ -47,11 +49,17 @@ class ForwardWorker(
                 }
             }
             Log.i(TAG, "Forward OK from=$sender mode=${prefs.mode}")
+            stats.recordForwarded(System.currentTimeMillis())
             Result.success()
         } catch (e: Exception) {
-            // Log class + message (not the body); helps diagnose SMTP/auth issues.
+            // Log class + message (not the body); helps diagnose API/auth issues.
             Log.w(TAG, "Forward failed (attempt ${runAttemptCount + 1}): ${e.javaClass.simpleName}: ${e.message}")
-            if (runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
+            if (runAttemptCount < MAX_ATTEMPTS) {
+                Result.retry()
+            } else {
+                stats.recordFailed()
+                Result.failure()
+            }
         }
     }
 
