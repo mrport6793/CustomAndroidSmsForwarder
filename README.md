@@ -40,6 +40,8 @@ Open the app, grant the SMS + notification permissions, tap **Disable battery op
 3. In the app: paste the `re_…` key, leave **From** as `onboarding@resend.dev`, and set **Forward to** to your Resend account email.
    - The `onboarding@resend.dev` sandbox only delivers to **your own account email**. To forward elsewhere, verify a domain in Resend and use a `From` on it.
 
+> **If forwards land in spam:** a 2xx from Resend means "accepted", not "inboxed". To keep OTP forwards in the inbox: verify your domain's **SPF + DKIM** in Resend (part of domain verification) and add a **DMARC** record; send from a consistent address on that domain; and the first time a forward arrives, mark it **Not spam** / add the sender to contacts so the mailbox learns it. New domains also need a short reputation warm-up.
+
 **SMS→SMS mode:** just enter the destination phone number. No third party — phone→carrier. (Carrier SMS charges may apply per text.)
 
 **Filters (optional):** restrict by sender, required keyword, or body regex. Blank = forward everything.
