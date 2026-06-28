@@ -17,7 +17,15 @@ A manifest-declared `BroadcastReceiver` wakes on `SMS_RECEIVED` (this still work
 ## Language & target
 
 - **Kotlin** (this is a hard requirement — see `CLAUDE.md`)
-- `minSdk` 24, target the Pixel 4a's **Android 13 (API 33)**; `compileSdk` 34+
+- `minSdk` 24 · `targetSdk` 36 · runs on the Pixel 4a's **Android 13 (API 33)** and any device on API 24+
+
+## Build prerequisites
+
+- **JDK 17** and the **Android SDK** (Android Studio is the easiest way to get both).
+- This repo is pinned to a current/preview toolchain: **AGP 9.2.1 · Kotlin 2.4.0 · Gradle 9.6.1 · `compileSdk 37`** (Android 17 preview). You must install **SDK Platform 37** (Android Studio → SDK Manager) or the build will fail with an AAR-metadata error.
+- **Prefer stable tooling?** Edit two files so it builds on the latest stable SDK instead:
+  - `app/build.gradle.kts`: `compileSdk = 36`, and pin the AndroidX/Compose deps to API-36-compatible versions (e.g. `core-ktx:1.13.1`, `compose-bom:2024.12.01`, `work-runtime-ktx:2.9.1`).
+  - `build.gradle.kts`: AGP `8.7.x`; `gradle/wrapper/gradle-wrapper.properties`: `gradle-8.14.x`.
 
 ## Install
 
@@ -90,3 +98,7 @@ This app reads every SMS — **including 2FA/OTP codes** — so treat it and its
 - **Email mode trusts Resend.** Resend's servers see each forwarded message. For zero third parties in the path, use **SMS→SMS mode**.
 - **Lock down the destination inbox** (strong unique password + 2FA) — it will receive your OTP codes.
 - The app requests only `RECEIVE_SMS`, `SEND_SMS`, `INTERNET`, `POST_NOTIFICATIONS`. It deliberately does **not** request `READ_SMS` (no access to your existing inbox).
+
+## License
+
+[MIT](LICENSE) — use it, fork it, ship it. No warranty; you run it on your own device and credentials.
