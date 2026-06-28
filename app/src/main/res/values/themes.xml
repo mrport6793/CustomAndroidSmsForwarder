@@ -1,0 +1,5 @@
+<resources>
+    <!-- Framework Material theme: no extra dependency, works API 24+.
+         Compose draws the actual UI; this just styles the window. -->
+    <style name="Theme.SmsForwarder" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

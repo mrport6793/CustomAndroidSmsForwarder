@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SEND_SMS is only needed for SMS->SMS mode; INTERNET only for email mode.
+  Keeping both declared is fine.
+
+  NOTE: READ_SMS is deliberately NOT declared. The app only consumes the
+  SMS_RECEIVED broadcast (covered by RECEIVE_SMS) and never reads the SMS
+  content provider, so granting full inbox access would be needless privilege.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- API 33 -->
+    <!-- Lets the app open the system "don't optimize battery" dialog directly so
+         a dedicated, plugged-in phone delivers forwards promptly even in Doze. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <application
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SmsForwarder">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          android:permission="android.permission.BROADCAST_SMS" ensures only the
+          system can deliver this broadcast (prevents spoofed SMS_RECEIVED).
+          A manifest-declared receiver wakes the app even when it is not running.
+        -->
+        <receiver
+            android:name=".SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>
